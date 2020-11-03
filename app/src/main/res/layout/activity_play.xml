@@ -8,8 +8,8 @@
 
     <TextView
         android:id="@+id/player_cards"
-        android:layout_width="127dp"
-        android:layout_height="64dp"
+        android:layout_width="150dp"
+        android:layout_height="160dp"
         android:layout_marginBottom="28dp"
         android:gravity="center"
         android:textSize="24sp"
@@ -45,17 +45,17 @@
         android:id="@+id/deal_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="188dp"
+        android:layout_marginTop="132dp"
         android:text="DEAL"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/dealer_cards" />
+        app:layout_constraintTop_toTopOf="@+id/dealer_score_text" />
 
     <TextView
         android:id="@+id/info_text"
-        android:layout_width="136dp"
-        android:layout_height="74dp"
+        android:layout_width="118dp"
+        android:layout_height="77dp"
         android:layout_marginStart="4dp"
         android:layout_marginLeft="4dp"
         android:layout_marginBottom="156dp"
@@ -92,4 +92,13 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="@+id/options_lv"
         app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/dealer_score_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/dealer_cards"
+        tools:layout_editor_absoluteY="150dp" />
 </androidx.constraintlayout.widget.ConstraintLayout>

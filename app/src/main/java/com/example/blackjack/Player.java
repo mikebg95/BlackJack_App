@@ -46,7 +46,6 @@ public class Player {
 
     public String cardText(boolean dealer) {
 
-
         String result = "";
         if (dealer && cards.size() == 2) {
             result += cards.get(0).getName() + " XX";
