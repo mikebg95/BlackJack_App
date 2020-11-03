@@ -8,6 +8,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 public class HomeActivity extends AppCompatActivity {
 
@@ -28,14 +29,34 @@ public class HomeActivity extends AppCompatActivity {
         play_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                int chips = Integer.parseInt(chips_text.getText().toString());
+                try {
+                    int chips = Integer.parseInt(chips_text.getText().toString());
 
-                // go to playActivity, add name and chips to intent
-                intent = new Intent(HomeActivity.this, PlayActivity.class);
-                intent.putExtra("name", name_text.getText());
-                intent.putExtra("chips", chips);
-                startActivity(intent);
+                    if (isEmpty(name_text)) {
+                        Toast.makeText(getApplicationContext(), "Please insert a name", Toast.LENGTH_SHORT).show();
+                    }
+                    else {
+                        // go to playActivity, add name and chips to intent
+                        intent = new Intent(HomeActivity.this, PlayActivity.class);
+                        intent.putExtra("name", name_text.getText().toString());
+                        intent.putExtra("chips", chips);
+                        startActivity(intent);
+                    }
+                }
+                catch (NumberFormatException e) {
+                    Toast.makeText(getApplicationContext(), "Please insert number of chips", Toast.LENGTH_SHORT).show();
+                }
             }
         });
+    }
+
+    public boolean isEmpty(EditText et) {
+        String text = et.getText().toString();
+        if (text.trim().equals("")) {
+            return true;
+        }
+        else {
+            return false;
+        }
     }
 }

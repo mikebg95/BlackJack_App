@@ -27,7 +27,7 @@
         android:layout_marginTop="112dp"
         android:ems="10"
         android:gravity="center"
-        android:inputType="textPersonName"
+        android:inputType="number"
         android:text="Chips"
         android:textSize="18sp"
         app:layout_constraintEnd_toEndOf="parent"
