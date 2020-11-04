@@ -1,11 +1,9 @@
 package com.example.blackjack;
 
 
-import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.app.AlertDialog.Builder;
@@ -13,7 +11,6 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -23,57 +20,42 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import javax.security.auth.callback.Callback;
-
 import static android.view.View.VISIBLE;
-import static java.lang.Thread.currentThread;
-import static java.lang.Thread.sleep;
 
 public class PlayActivity extends Activity {
 
+    // static variables
+    static String TAG = "GAMEPLAY";
+    static int NUM_CARDS = 2;
+
+    // UI views
     ListView options_lv;
     TextView dealer_cards, player_cards, info_text, bet_text, score_text, dealer_score_text;
     Button deal_btn;
     EditText insert_bet;
+
+    // needed variables
     Intent intent;
-    String name;
+    String name, dialogText;
     int chips;
     Player user, dealer;
     ArrayList<String> options;
     ArrayAdapter<String> arrayAdapter;
     Context context;
-    ArrayList<String> option;
-    boolean optionClicked;
     ArrayList<Card> deck;
+    boolean dealerTurnBool, playing;
     private Handler handler = new Handler();
     Timer timer = new Timer();
-    boolean dealerTurnBool;
-//    BackgroundRunnable backgroundRunnable;
-    Thread bgThread;
-    boolean playing;
-    String dialogText;
     AlertDialog dialog;
-
-    static String TAG = "GAMEPLAY";
-
-    int round_number = 1;
-
-    static int NUM_CARDS = 2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_play);
-
-        dealerTurnBool = false;
-        playing = true;
 
         // layout views
         options_lv = findViewById(R.id.options_lv);
@@ -86,11 +68,12 @@ public class PlayActivity extends Activity {
         score_text = findViewById(R.id.score_text);
         dealer_score_text = findViewById(R.id.dealer_score_text);
 
+        // set needed variables
         options = new ArrayList<String>();
         arrayAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, options);
         context = getApplicationContext();
-
         dialogText = "";
+        dealerTurnBool = false;
 
         // get name and chips from intent
         intent = getIntent();
@@ -106,10 +89,9 @@ public class PlayActivity extends Activity {
         info_text.setText("Name: " + user.getName() + "\nChips: " + Integer.toString(user.getChips()));
 
         // start background thread
-//        backgroundRunnable = new BackgroundRunnable();
-//        new Thread(backgroundRunnable).start();
+        startBackgroundThread();
 
-        // when 'deal' button is clicked
+        // when 'deal' button is clicked, make sure all is well
         deal_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -137,13 +119,12 @@ public class PlayActivity extends Activity {
 
     public void playRound() {
 
-        // start background thread
-        startBackgroundThread();
+        playing = true;
 
         // show bet info
         bet_text.setText("Bet: " + Integer.toString(user.getBet()));
 
-        // set bet edittext and deal button invisible
+        // set bet entry and deal button invisible
         insert_bet.setVisibility(View.INVISIBLE);
         deal_btn.setVisibility(View.INVISIBLE);
 
@@ -162,17 +143,20 @@ public class PlayActivity extends Activity {
         setCards(user, true);
         setCards(dealer, false);
 
+        // check if player has blackjack
         checkBlackjack();
 
+        // present move options based on turn and cards
         presentMoves();
 
+        // show move options in listview
         options_lv.setAdapter(arrayAdapter);
         arrayAdapter.notifyDataSetChanged();
         options_lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                // get chosen move option
-                String option = (String) parent.getItemAtPosition(position);
+
+                String option = (String) parent.getItemAtPosition(position); // get chosen move option
 
                 // if user chose 'hit'
                 if (option.equals("Hit")) {
@@ -183,20 +167,21 @@ public class PlayActivity extends Activity {
                 else if (option.equals("Double")) {
 
                     // double bet and update chips
+                    user.setChips(user.getChips() - user.getBet());
                     user.setBet(user.getBet() * 2);
                     bet_text.setText(Integer.toString(user.getBet()));
-                    user.setChips(user.getChips() - user.getBet());
+                    info_text.setText("Name: " + user.getName() + "\nChips: " + Integer.toString(user.getChips()));
 
                     hit(user);
                 }
 
                 // if user chose 'stand'
                 else if (option.equals("Stand")) {
-//                    playing = false;
 
                     dealer_cards.setText(dealer.cardText(false));
 
                     // TODO: dealer cards don't update until after entire program finishes
+                    // TODO: maybe put in dealerTurn() ??
 //                    runOnUiThread(new Runnable() {
 //                        @Override
 //                        public void run() {
@@ -211,7 +196,7 @@ public class PlayActivity extends Activity {
 
                 }
 
-                // TODO
+                // Shows players cards after each move
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -227,6 +212,7 @@ public class PlayActivity extends Activity {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                // clear options
                 options.clear();
                 arrayAdapter.notifyDataSetChanged();
 
@@ -237,10 +223,14 @@ public class PlayActivity extends Activity {
                 dealer_score_text.setText("");
                 bet_text.setText("");
 
-                // make bet insertion and deal button visible again
+                // clear dialog text
+                dialogText = "";
+
+                // make bet entry and deal button visible again
                 deal_btn.setVisibility(VISIBLE);
                 insert_bet.setVisibility(VISIBLE);
 
+                // update info text
                 info_text.setText("Name: " + user.getName() + "\nChips: " + Integer.toString(user.getChips()));
             }
         });
@@ -249,6 +239,7 @@ public class PlayActivity extends Activity {
         user.resetCards();
         dealer.resetCards();
 
+        // when deal button clicked, start new round
         deal_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -274,6 +265,7 @@ public class PlayActivity extends Activity {
         });
     }
 
+    // TODO: Doesn't show dealer cards until after program is finished!!
     public void dealerTurn() {
 //        dealerTurnBool = true;
         while (true) {
@@ -312,56 +304,42 @@ public class PlayActivity extends Activity {
         }
     }
 
-    // TODO: Background thread only works first round!!
+    // TODO: program crashes when attempting to show dealer score in background thread, but not with player score
+    // TODO: EVEN THOUGH THEY ARE EXACTLY THE SAME
     public void startBackgroundThread() {
         Thread bgThread = new Thread() {
             public void run() {
-                Looper.prepare();
-                while (playing) {
-                    Log.d(TAG, "...STARTED BG THREAD LOOP...");
+                while (true) {
+                    if (playing) {
 
-                    int score = user.calculateScore();
-                    int dealerScore = dealer.calculateScore();
+                        int score = user.calculateScore();
+                        int dealerScore = dealer.calculateScore();
 
-                    if (score == 0) {
-                        score_text.setText("");
-                    }
-                    else if (score > 21) {
-                        score_text.setText("Score: " + Integer.toString(score));
-                        setCards(user, true);
-                        done("loss");
-                        Log.d(TAG, "Score over 21! You lose.");
+                        if (score == 0) {
+                            score_text.setText("");
+                        } else if (score > 21) {
+                            Log.d(TAG, "OVER 21");
+                            score_text.setText("Score: " + Integer.toString(score));
+                            setCards(user, true);
+                            done("loss");
+                            Log.d(TAG, "Score over 21! You lose.");
+                        } else {
+                            score_text.setText("Score: " + Integer.toString(score));
+                        }
                     }
                     else {
-                        score_text.setText("Score: " + Integer.toString(score));
+                        Log.d(TAG, "NOT PLAYING");
                     }
-
-
-                    // TODO: program crashes when attempting to show dealer score in background thread, but not with player score
-                    // TODO: EVEN THOUGH THEY ARE EXACTLY THE SAME
-//                    if (dealerScore == 0) {
-//                        dealer_score_text.setText("");
-//                    }
-//                    else if (dealerScore > 21) {
-//                        dealer_score_text.setText("Score: " + Integer.toString(score));
-////                        setCards(user, true);
-//                        done("loss");
-////                        Log.d(TAG, "Score over 21! You lose.");
-//                    }
-//                    else {
-//                        dealer_score_text.setText("Score: " + Integer.toString(score));
-//                    }
                 }
-                Looper.loop();
             }
         };
         bgThread.start();
     }
 
     public void presentMoves() {
-        options.clear();
+        options.clear(); // clear previous moves in list
 
-        // show move options
+        // show move options based on situation
         options.add("Hit");
         options.add("Stand");
         if (user.getChips() > user.getBet() && user.getCards().size() == 2) {
@@ -372,9 +350,10 @@ public class PlayActivity extends Activity {
         }
     }
 
+    // TODO: setCards() works, but only until after round finished
     public void setCards(Player player, boolean open) {
         String text;
-        if (player.getName() == "Dealer") {
+        if (player.getName().equals("Dealer")) {
             if (player.getCards().size() == 2 && !open) {
                 text = dealer.cardText(true);
             }
@@ -391,10 +370,9 @@ public class PlayActivity extends Activity {
     }
 
     public void done(String result) {
-        playing = false;
-        Log.d("USER_CARDS", "PLAYER CARDS: " + user.cardText(false));
-        Log.d(TAG, "DEALER CARDS: " + dealer.cardText(false));
+        playing = false; // so that background thread stops loop
 
+        // number of times user wins back bet
         double times;
         if (result.equals("tie")) {
             Log.d(TAG, "TIE");
@@ -416,6 +394,7 @@ public class PlayActivity extends Activity {
             dialogText += "You LOSE!";
             times = 0;
         }
+        // make calculations
         int currentChips = user.getChips();
         int currentBet = user.getBet();
         long nb = Math.round(currentBet * times);
@@ -423,11 +402,15 @@ public class PlayActivity extends Activity {
         int newChips = currentChips + newBet;
         user.setChips(newChips);
 
+        // present user with dialoginterface with info and asking for new round
         dialogText += "\nYou gained " + newBet + " new chips.\n\n";
-        dialog = new MyDialogBuilder().getMyDialog(PlayActivity.this, dialogText + "New round?");
-        dialog.show();
-
-        Log.d("GAMEPLAY", "You gained " + newBet + " new chips!");
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                dialog = new MyDialogBuilder().getMyDialog(PlayActivity.this, dialogText + "New round?");
+                dialog.show();
+            }
+        });
     }
 
     class SmallDelay extends TimerTask {
@@ -437,6 +420,8 @@ public class PlayActivity extends Activity {
     }
 
     public void checkWinner() {
+
+        // calculate scores and check winner
         int userScore = user.calculateScore();
         int dealerScore = dealer.calculateScore();
         if (userScore > 21) {
@@ -444,20 +429,16 @@ public class PlayActivity extends Activity {
             done("loss");
         }
         else if (dealerScore > 21) {
-            Toast.makeText(context, "Dealer over 21! You win!", Toast.LENGTH_SHORT).show();
             done("win");
         }
         else {
             if (userScore > dealerScore) {
-                Toast.makeText(context, "You win!", Toast.LENGTH_SHORT).show();
                 done("win;");
             }
             else if (dealerScore > userScore) {
-                Toast.makeText(context, "Dealer wins!", Toast.LENGTH_SHORT).show();
                 done("loss");
             }
             else {
-                Toast.makeText(context, "It's a tie!", Toast.LENGTH_SHORT).show();
                 done("tie");
             }
         }
@@ -480,14 +461,18 @@ public class PlayActivity extends Activity {
     }
 
     public void hit(Player player) {
-//        setCards(player);
+        // deal decks top card to player
         player.addCard(deck.get(0));
         deck.remove(0);
+
+        // present move options
         presentMoves();
         arrayAdapter.notifyDataSetChanged();
     }
 
     static boolean hasBlackjack(Player player) {
+
+        // checks if player has blackjack
         if (player.getCards().size() != 2) {
             return false;
         }
@@ -509,6 +494,7 @@ public class PlayActivity extends Activity {
         public AlertDialog getMyDialog(Context c, String message) {
             this.context = c;
 
+            // create alert dialog
             AlertDialog.Builder builder = new AlertDialog.Builder(context);
             builder.setMessage(message).setPositiveButton("Yes", dialogClickListener).
                     setNegativeButton("No", dialogClickListener);
@@ -517,15 +503,18 @@ public class PlayActivity extends Activity {
             return dialog;
         }
 
+        // when clicked on one of the options
         DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 switch (which){
+
+                    // start new round
                     case DialogInterface.BUTTON_POSITIVE:
-                        playing = false;
                         newRound();
                         break;
 
+                    // go back to home screen
                     case DialogInterface.BUTTON_NEGATIVE:
                         intent = new Intent(PlayActivity.this, HomeActivity.class);
                         startActivity(intent);
