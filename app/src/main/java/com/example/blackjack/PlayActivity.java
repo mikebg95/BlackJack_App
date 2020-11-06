@@ -25,6 +25,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import static android.view.View.VISIBLE;
+import static java.lang.Thread.sleep;
 
 public class PlayActivity extends Activity {
 
@@ -74,6 +75,15 @@ public class PlayActivity extends Activity {
         context = getApplicationContext();
         dialogText = "";
         dealerTurnBool = false;
+
+        insert_bet.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                if (hasFocus) {
+                    insert_bet.setText("");
+                }
+            }
+        });
 
         // get name and chips from intent
         intent = getIntent();
@@ -173,12 +183,27 @@ public class PlayActivity extends Activity {
                     info_text.setText("Name: " + user.getName() + "\nChips: " + Integer.toString(user.getChips()));
 
                     hit(user);
+                    dealerTurnBool = true;
+                    dealerTurn();
+                    checkWinner();
                 }
 
                 // if user chose 'stand'
                 else if (option.equals("Stand")) {
 
-                    dealer_cards.setText(dealer.cardText(false));
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            dealer_cards.setText(dealer.cardText(false));
+                        }
+                    });
+
+                    try {
+                        sleep(1000);
+                    } catch (Exception e) {
+
+                    }
+
 
                     // TODO: dealer cards don't update until after entire program finishes
                     // TODO: maybe put in dealerTurn() ??
@@ -279,7 +304,7 @@ public class PlayActivity extends Activity {
 //            });
 
 //            timer.schedule(new SmallDelay(), 100);
-            Log.d(TAG, "DEALER CARDS: " + dealer.cardText(false));
+//            Log.d(TAG, "DEALER CARDS: " + dealer.cardText(false));
 
             if (dealer.getCards().size() == 2 && dealer.calculateScore() == 21) {
                 Log.d(TAG, "DEALER HAS BLACKJACK");
@@ -287,18 +312,18 @@ public class PlayActivity extends Activity {
             }
             if (dealer.calculateScore() > 21) {
                 Log.d(TAG, "DEALER OVER 21");
-                Log.d(TAG, "DEALER CARDS: " + dealer.cardText(false));
+//                Log.d(TAG, "DEALER CARDS: " + dealer.cardText(false));
                 return;
             }
             if (dealer.calculateScore() < 17) {
                 Log.d(TAG, "DEALER TAKES ANOTHER CARD");
                 hit(dealer);
                 dealer_cards.setText(dealer.cardText(false));
-                Log.d(TAG, "DEALER CARDS: " + dealer.cardText(false));
+//                Log.d(TAG, "DEALER CARDS: " + dealer.cardText(false));
             }
             if (dealer.calculateScore() >= 17) {
                 Log.d(TAG, "DEALER NO MORE CARDS");
-                Log.d(TAG, "DEALER CARDS: " + dealer.cardText(false));
+//                Log.d(TAG, "DEALER CARDS: " + dealer.cardText(false));
                 return;
             }
         }
@@ -328,7 +353,7 @@ public class PlayActivity extends Activity {
                         }
                     }
                     else {
-                        Log.d(TAG, "NOT PLAYING");
+//                        Log.d(TAG, "NOT PLAYING");
                     }
                 }
             }
@@ -424,21 +449,32 @@ public class PlayActivity extends Activity {
         // calculate scores and check winner
         int userScore = user.calculateScore();
         int dealerScore = dealer.calculateScore();
+        Log.d(TAG, "USER CARDS: " + user.cardText(false));
+        Log.d(TAG, "DEALER CARDS: " + dealer.cardText(false));
+        Log.d(TAG, "USER SCORE: " + Integer.toString(userScore));
+        Log.d(TAG, "DEALER SCORE: " + Integer.toString(dealerScore));
+
+
         if (userScore > 21) {
-            Log.d(TAG, "PLAYER OVER 21! YOU LOSE");
+            Log.d(TAG, "USERSCORE > 21");
             done("loss");
         }
         else if (dealerScore > 21) {
+            Log.d(TAG, "DEALERSCORE > 21");
             done("win");
         }
         else {
+            Log.d(TAG, "NOBODY > 21");
             if (userScore > dealerScore) {
-                done("win;");
+                Log.d(TAG, "USERSCORE > DEALERSCORE -> WIN");
+                done("win");
             }
             else if (dealerScore > userScore) {
+                Log.d(TAG, "DEALERSCORE > USERSCORE -> LOSS");
                 done("loss");
             }
             else {
+                Log.d(TAG, "USERSCORE = DEALERSCORE -> TIE");
                 done("tie");
             }
         }

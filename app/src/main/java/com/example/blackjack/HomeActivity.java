@@ -26,6 +26,24 @@ public class HomeActivity extends AppCompatActivity {
         chips_text = findViewById(R.id.chips);
         play_btn = findViewById(R.id.play);
 
+        name_text.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                if (hasFocus) {
+                    name_text.setText("");
+                }
+            }
+        });
+
+        chips_text.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                if (hasFocus) {
+                    chips_text.setText("");
+                }
+            }
+        });
+
         play_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
